@@ -1,0 +1,223 @@
+// Welcome to the NBA Draft Simulator
+/*
+USER INSTRUCTIONS
+1. Press the Proceed to Draft Simulator Button.
+2. Select a number of teams you want in the draft lottery from the Teams in Lottery Dropdown.
+3. Randomize the lottery by clicking the Randomize Lottery Button.
+4. Click on any team from the Select an NBA Team Dropdown
+5. Check if they are elgible for the lottery by pressing the check Draft elgibility button.
+6. The text to the right of the logo will change depending on if they are in the lottery or not.
+7. It will also change if you made any errors telling you what errors to correct before you
+proceed.
+8. Reset the lottery and randomize again.
+9. If you want to add more teams to the lottery, select the amount of teams you want. If you do
+not click reset it will just add X more teams to the lottery that was already drawn.
+10. Click view Lottery Results to see all the teams in the lottery.
+*/
+
+// Initializing All my Variables using the NBA DataSet provided on CODE.ORG
+// teamList variable is to get the list of all NBA teams
+// teamLogoList will provide all the logos of NBA teams corresponding to the element in teamList
+// wins variable is going to be random number of wins for each nba team
+// filteredLogoList will make a list in order of smallest to largest wins logos as per their elgibility
+for the lottery
+// filteredTeamList will make a list in order of smallest to largest wins teams as per their elgibility
+for the lottery
+var teamList = getColumn("NBA Teams", "Team");
+var teamLogoList = getColumn("NBA Teams", "Image");
+var filteredTeamList = [];
+var filteredLogoList = [];
+var wins = [];
+// List Note: Use of teamList and teamLogoList helps correspond logo with the team as well as
+helps keeps wins associated with certain teams.
+// Functions to Set and Toggle Between Screens
+// Initial Screen is introScreen
+setScreen("introScreen");
+// From lotteryScreen to IntroScreen
+onEvent("backButton", "click", function()
+{
+setScreen("introScreen");
+
+}
+);
+onEvent("beginButton", "click", function()
+{
+setScreen("lotteryScreen");
+});
+onEvent("returnButton", "click", function()
+{
+setScreen("lotteryScreen");
+});
+
+// Toggles to Lottery Page to show all teams in lottery and places the text in order.
+onEvent("lotteryResults", "click", function()
+{
+setScreen("nbaStandingGenerator");
+var projectedLottery = " Projected Picks ";
+for(var t = 0; t < filteredTeamList.length; t++)
+{
+projectedLottery = projectedLottery + "\n" + (t+1) + ": " + filteredTeamList[t];
+}
+setText("lotteryLister", projectedLottery);
+});
+
+// Uses different situations to see whether a draft Lottery is needed
+// User Input: clicking the proceedLotteryButton
+/* Functionality: Program will first check the team limit, and if it either does not exist
+or if it is less than the amount of teams already in the lottery, it will notify the user.
+If the number of teams is greater than the amount already in the lottery it will just add X-Y teams
+to the lottery where x is the amount selected in dropdown and y is the number that already
+exists
+If no issues are present, it will do the filterLottery function, and display the output lottery
+randomized when completed.
+*/
+onEvent("proceedLotteryButton", "click", function()
+{
+var teamLimit = getText("teamLotteryDropdown");
+if (teamLimit == "Teams In Lottery")
+{
+setText("isElgibleText", "You must set the number of teams you want in the lottery");
+
+}
+else
+{
+if(filteredTeamList.length >= teamLimit)
+{
+setText("isElgibleText", "You must reset the lottery to randomize it again.");
+}
+else
+{
+var randomizeText = teamLimit - filteredTeamList.length;
+filterLottery(teamLimit - filteredTeamList.length);
+if(randomizeText < teamLimit)
+{
+setText("isElgibleText", randomizeText + " have been added to the lottery.");
+}
+else
+{
+setText("isElgibleText", "Lottery Randomized.");
+}
+}
+}
+});
+
+/*
+Input: click on the checkElgibilityButton
+Functionality: sees if team is on the filteredTeamList to see if they are elgible for the lottery; tells
+user if lottery has not been randomized
+Output: It tells whether the team is elgible for the lottery or not on isElgibleText
+*/
+onEvent("checkElgibilityButton", "click", function()
+{
+checkTeam(getText("teamDropdown").substring(1,getText("teamDropdown").length - 1),
+filteredTeamList.length);
+});
+
+// User Input: change the dropdown to a different team
+// Functionality: To change the team being looked at by the program, to find a team in either the
+teamList or filteredTeamList
+// Output: the Logo of the team in the left middle of the screen.
+onEvent("teamDropdown", "change", function()
+
+{
+var teamName = getText("teamDropdown").substring(1,getText("teamDropdown").length - 1);
+var index = teamList.indexOf(teamName);
+if(index != -1)
+{
+setProperty("teamLogo", "image", teamLogoList[index]);
+}
+else
+{
+index = filteredTeamList.indexOf(teamName);
+setProperty("teamLogo", "image", filteredLogoList[index]);
+}
+});
+
+// Sequencing: Needs to randomize wins before going to for loop; uses an input (teamNum) from
+the user; output is a new List
+// Parameter: uses teamNum parameter to make limit of lottery teams. Without it, you would not
+be able to change the number of teams in lottery.
+// Iteration: Two For Loops: One allows the process to repeat teamNUm times, the other allows
+the list to be traversed through without having to compare every single number to every single
+number for least wins.
+// Selection: If statement used to find the team with the least amount of wins each time. Always
+makes sure the least amount of wins is up there.
+function filterLottery(teamNum)
+{
+randomizeWins();
+var leastWins;
+var limit = teamNum;
+for(var g = 0; g < limit; g++)
+{
+leastWins = wins[0];
+for(var i = 0; i < wins.length; i++)
+{
+if(wins[i] < leastWins)
+{
+leastWins = wins[i];
+}
+}
+var leastIndex = wins.indexOf(leastWins);
+
+appendItem(filteredTeamList, teamList[leastIndex]);
+appendItem(filteredLogoList, teamLogoList[leastIndex]);
+removeItem(wins, leastIndex);
+removeItem(teamList, leastIndex);
+removeItem(teamLogoList, leastIndex);
+}
+}
+
+// Removes all teams from lottery by adding them from filteredTeamList to TeamList
+// Utilizes for loop to prevent any duplicates
+onEvent("resetLotteryButton", "click", function()
+{
+for(var a = filteredTeamList.length - 1; a >= 0 ; a--)
+{
+appendItem(teamList, filteredTeamList[a]);
+appendItem(teamLogoList, filteredLogoList[a]);
+removeItem(filteredLogoList, a);
+removeItem(filteredTeamList, a);
+}
+setText("isElgibleText", "Lottery Reset");
+});
+
+// Setting initial screen to home Screen and calling addTeams function to add all teams to
+dropdown
+// wins will be randomized and associated with the team using a for loop
+function randomizeWins(){
+for(var i = 0; i < teamList.length ; i++)
+{
+wins[i] = randomNumber(4,78);
+}
+}
+function checkTeam(teamName, teamsInLottery)
+{
+if(teamsInLottery == 0)
+{
+setText("isElgibleText", "You must randomize the lottery for a team to be elgible for the
+lottery.");
+
+}
+else
+{
+var teamLimit = getText("teamLotteryDropdown");
+if (teamLimit == "Teams In Lottery")
+{
+teamLimit = 0;
+setText("isElgibleText", "You must select the number of teams you want in the lottery.");
+}
+else
+{
+var elgibleYorN;
+elgibleYorN = "No, they are not elgible for the Draft Lottery.";
+for(var k = 0; k < filteredTeamList.length; k++)
+{
+if(filteredTeamList[k] == teamName)
+{
+elgibleYorN = "Yes, they are elgible for the Draft Lottery.";
+}
+}
+setProperty("isElgibleText", "text", elgibleYorN);
+}
+}
+}
